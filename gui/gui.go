@@ -1,4 +1,4 @@
-package main
+package gui
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"pinecone/common"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ type GUIOptions struct {
 	DataFolder   string
 	JSONFilePath string
 	JSONUrl      string
+	DumpLocation string
 }
 
 type Settings struct {
@@ -160,7 +162,7 @@ func showSettingsDialog(parent fyne.Window, settings *Settings, app fyne.App) {
 	settingsWindow.Show()
 }
 
-func setDumpFolder(window fyne.Window) {
+func (options *GUIOptions)setDumpFolder(window fyne.Window) {
 	dialog.ShowFolderOpen(func(list fyne.ListableURI, err error) {
 		if err != nil {
 			dialog.ShowError(err, window)
@@ -175,7 +177,7 @@ func setDumpFolder(window fyne.Window) {
 		path = strings.Replace(path, "file://", "", -1)
 		// set global scanpath variable to the selected folder
 		if strings.Contains(path, "TDATA") {
-			dumpLocation = path
+			options.DumpLocation = path
 			// We don't want usernames in the log, so we'll just show the folder name AFTER passing it to checkForContent
 			// path = strings.Replace(path, homeDir, "", -1)
 			output.SetText(output.Text + "Path set to: " + path + "\n")
@@ -210,7 +212,7 @@ func saveOutput() {
 
 }
 
-func startGUI(options GUIOptions) {
+func(options *GUIOptions) StartGUI() {
 	a := app.New()
 	w := a.NewWindow("Pinecone 0.5.0")
 
@@ -231,16 +233,16 @@ func startGUI(options GUIOptions) {
 
 	// set folder to scan, but only if it is a TDATA folder.
 	setFolder := widget.NewButtonWithIcon("", tdataButtonIcon, func() {
-		setDumpFolder(w)
+		options.setDumpFolder(w)
 	})
 
 	scanPath := widget.NewButtonWithIcon("", theme.SearchIcon(), func() {
-		if dumpLocation == "" {
+		if options.DumpLocation == "" {
 			output.SetText(output.Text + "Please set a path first.\n")
 		} else {
-			path := dumpLocation
+			path := options.DumpLocation
 			output.SetText(output.Text + "Checking for Content...\n")
-			err := checkForContent(path)
+			err := common.CheckForContent(path)
 			if nil != err {
 				log.Fatalln(err)
 			}
@@ -253,13 +255,13 @@ func startGUI(options GUIOptions) {
 
 	updateJSON := widget.NewButtonWithIcon("", theme.DownloadIcon(), func() {
 		var updateJSON = true
-		err := checkDatabaseFile(options.JSONFilePath, options.JSONUrl, updateJSON)
+		err := common.CheckDatabaseFile(options.JSONFilePath, options.JSONUrl, updateJSON)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	})
 	// Create the settings button with the settings icon
-	settingsButton := widget.NewButtonWithIcon("", theme.SettingsIcon(), func() {
+	settingsButton := widget.NewButtonWithIcon("",theme.SettingsIcon(), func() {
 		// Open the settings screen
 		settings, err := loadSettings()
 		if err != nil {
@@ -280,7 +282,7 @@ func startGUI(options GUIOptions) {
 	// Create a container with vertical box layout for the buttons
 	buttons := container.NewVBox(setFolder, scanPath, updateJSON, saveOutput, settingsButton, exit)
 
-	// Add the hamburger button to the hamburgerMenu
+	// Add the buttons to the sideMenu
 	sideMenu.Add(buttons)
 
 	// Create a container with scroll for the output
@@ -289,7 +291,7 @@ func startGUI(options GUIOptions) {
 	// Create a container to hold the main content of the window
 	mainContent := container.NewBorder(nil, nil, nil, nil, outputScroll)
 
-	// Create a container that includes the hamburger menu and main content
+	// Create a container that includes the side menu and main content
 	fullContent := container.NewBorder(nil, nil, sideMenu, nil, mainContent)
 
 	// Place the buttons to the left and the output to the center

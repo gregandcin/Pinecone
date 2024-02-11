@@ -1,12 +1,14 @@
-package main
+package common
 
 import (
 	"fmt"
 	"os"
+	"pinecone/cli"
+	"pinecone/gui"
 	"runtime"
 )
 
-func checkDataFolder(dataFolder string) error {
+func CheckDataFolder(dataFolder string) error {
 	// Ensure data folder exists
 	if _, err := os.Stat(dataFolder); os.IsNotExist(err) {
 		fmt.Println("Data folder not found. Creating...")
@@ -17,35 +19,39 @@ func checkDataFolder(dataFolder string) error {
 	return nil
 }
 
-func checkDatabaseFile(jsonFilePath string, jsonURL string, updateFlag bool) error {
+func CheckDatabaseFile(cliOpts *cli.CLIOptions, guiOpts *gui.GUIOptions) error {
+	if nil != cliOpts {
 	// Check if JSON file exists
-	if _, err := os.Stat(jsonFilePath); os.IsNotExist(err) {
+	if _, err := os.Stat(cliOpts.JSONFilePath); os.IsNotExist(err) {
 		// Prompt for download if JSON file doesn't exist
-		if promptForDownload(jsonURL) {
-			err := loadJSONData(jsonFilePath, "Xbox-Preservation-Project", "Pinecone", "data/id_database.json", &titles, true)
+		if cli.PromptForDownload(cliOpts.JSONUrl) {
+			err := loadJSONData(cliOpts.JSONFilePath, "Xbox-Preservation-Project", "Pinecone", "data/id_database.json", &cliOpts.TitleList, true)
 			if err != nil {
 				return fmt.Errorf("error downloading data: %v ", err)
 			}
 		} else {
 			return fmt.Errorf("download aborted by user")
 		}
-	} else if updateFlag {
+	} else if cliOpts.UpdateFlag {
 		// Handle manual update
-		err := loadJSONData(jsonFilePath, "Xbox-Preservation-Project", "Pinecone", jsonFilePath, &titles, true)
+		err := loadJSONData(cliOpts.JSONFilePath, "Xbox-Preservation-Project", "Pinecone", cliOpts.JSONFilePath, &cliOpts.TitleList, true)
 		if err != nil {
 			return fmt.Errorf("error updating data: %v", err)
 		}
 	} else {
 		// Load existing JSON data
-		err := loadJSONData(jsonFilePath, "Xbox-Preservation-Project", "Pinecone", jsonFilePath, &titles, false)
+		err := loadJSONData(cliOpts.JSONFilePath, "Xbox-Preservation-Project", "Pinecone", cliOpts.JSONFilePath, &cliOpts.TitleList, false)
 		if err != nil {
 			return fmt.Errorf("error loading data: %v", err)
 		}
+	}	
 	}
+
+	
 	return nil
 }
 
-func checkDumpFolder(dumpLocation string) error {
+func CheckDumpFolder(dumpLocation string) error {
 	if dumpLocation != "dump" {
 		if _, err := os.Stat(dumpLocation); os.IsNotExist(err) {
 			return fmt.Errorf("directory does not exist, exiting")
@@ -62,21 +68,22 @@ func checkDumpFolder(dumpLocation string) error {
 	return nil
 }
 
-func checkParsingSettings() error {
-	if titleIDFlag != "" {
+func CheckParsingSettings(cliOpts *cli.CLIOptions, guiOpts *gui.GUIOptions) error {
+	if nil != cliOpts {
+	if cliOpts.TitleID != "" {
 		// if the titleID flag is set, print stats for that title
-		printStats(titleIDFlag, false)
-	} else if summarizeFlag {
+		cliOpts.PrintStats(cliOpts.TitleID, false)
+	} else if cliOpts.Summarize {
 		// if the summarize flag is set, print stats for all titles
-		printStats("", true)
-	} else if fatxplorer {
+		cliOpts.PrintStats("", true)
+	} else if cliOpts.FatXplorer {
 		if runtime.GOOS == "windows" {
 			if _, err := os.Stat(`X:\`); os.IsNotExist(err) {
 				return fmt.Errorf(`FatXplorer's X: drive not found`)
 			} else {
 				fmt.Println("Checking for Content...")
 				fmt.Println("====================================================================================================")
-				err := checkForContent("X:\\TDATA")
+				err := CheckForContent("X:\\TDATA")
 				if err != nil {
 					return err
 				}
@@ -87,16 +94,19 @@ func checkParsingSettings() error {
 	} else {
 		// If no flag is set, proceed normally
 		// Check if TDATA folder exists
-		if _, err := os.Stat(dumpLocation + "/TDATA"); os.IsNotExist(err) {
-			return fmt.Errorf("TDATA folder not found. Please place TDATA folder in the dump folder")
-		}
-		fmt.Println("Checking for Content...")
-		fmt.Println("====================================================================================================")
-		err := checkForContent("dump/TDATA")
-		if err != nil {
-			return err
-		}
+			if _, err := os.Stat(cliOpts.DumpLocation + "/TDATA"); os.IsNotExist(err) {
+				return fmt.Errorf("TDATA folder not found. Please place TDATA folder in the dump folder")
+			}
+			fmt.Println("Checking for Content...")
+			fmt.Println("====================================================================================================")
+			err := CheckForContent("dump/TDATA")
+			if err != nil {
+				return err
+			}		
+	}	
 	}
+
+	
 
 	return nil
 }

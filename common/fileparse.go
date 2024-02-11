@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"crypto/sha1"
@@ -52,7 +52,7 @@ func contains(slice []string, val string) bool {
 	return false
 }
 
-func checkForContent(directory string) error {
+func CheckForContent(directory string) error {
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
 		printInfo(color.FgYellow, "%s directory not found\n", directory)
 		return fmt.Errorf("%s directory not found", directory)

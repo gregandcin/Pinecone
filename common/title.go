@@ -1,4 +1,4 @@
-package main
+package common
 
 type TitleData struct {
 	TitleName         string              `json:"Title Name,"`

@@ -1,9 +1,11 @@
-package main
+package cli
 
 import (
 	"fmt"
 	"log"
 	"strings"
+
+	"pinecone/common"
 
 	"github.com/fatih/color"
 )
@@ -17,6 +19,12 @@ type CLIOptions struct {
 	DataFolder   string
 	JSONFilePath string
 	JSONUrl      string
+	DumpLocation string
+	TitleList 	common.TitleList
+	UpdateFlag bool
+	Summarize bool
+	TitleID string
+	FatXplorer bool
 }
 
 func printHeader(title string) {
@@ -34,22 +42,22 @@ func printInfo(colorCode color.Attribute, format string, args ...interface{}) {
 }
 
 // Prints statistics for a specific title or for all titles if batch is true.
-func printStats(titleID string, batch bool) {
+func (options *CLIOptions)PrintStats(titleID string, batch bool) {
 	if batch {
-		printTotalStats()
+		options.printTotalStats()
 	} else {
-		data, ok := titles.Titles[titleID]
+		data, ok := options.TitleList.Titles[titleID]
 		if !ok {
 			fmt.Printf("No data found for title ID %s\n", titleID)
 			return
 		}
 		fmt.Printf("Statistics for title ID %s:\n", titleID)
-		printTitleStats(&data)
+		options.printTitleStats(&data)
 	}
 }
 
 // Prints statistics for TitleData.
-func printTitleStats(data *TitleData) {
+func (options *CLIOptions)printTitleStats(data *common.TitleData) {
 	fmt.Println("Title:", data.TitleName)
 	fmt.Println("Total number of Content IDs:", len(data.ContentIDs))
 	fmt.Println("Total number of Title Updates:", len(data.TitleUpdates))
@@ -58,8 +66,8 @@ func printTitleStats(data *TitleData) {
 	fmt.Println()
 }
 
-func printTotalStats() {
-	totalTitles := len(titles.Titles)
+func (options *CLIOptions)printTotalStats() {
+	totalTitles := len(options.TitleList.Titles)
 	totalContentIDs := 0
 	totalTitleUpdates := 0
 	totalKnownTitleUpdates := 0
@@ -69,7 +77,7 @@ func printTotalStats() {
 	knownTitleUpdateHashes := make(map[string]struct{})
 	archivedItemHashes := make(map[string]struct{})
 
-	for _, data := range titles.Titles {
+	for _, data := range options.TitleList.Titles {
 		totalContentIDs += len(data.ContentIDs)
 		totalTitleUpdates += len(data.TitleUpdates)
 
@@ -98,7 +106,7 @@ func printTotalStats() {
 	fmt.Println("Total Archived Items:", totalArchivedItems)
 }
 
-func promptForDownload(url string) bool {
+func PromptForDownload(url string) bool {
 	var response string
 	fmt.Printf("The required JSON data is not found. It can be downloaded from %s\n", url)
 	fmt.Print("Do you want to download it now? (yes/no): ")
@@ -107,18 +115,18 @@ func promptForDownload(url string) bool {
 	return strings.ToLower(response) == "yes"
 }
 
-func startCLI(options CLIOptions) {
-	err := checkDataFolder(options.DataFolder)
+func (options *CLIOptions) StartCLI() {
+	err := common.CheckDataFolder(options.DataFolder)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = checkDatabaseFile(options.JSONFilePath, options.JSONUrl, updateFlag)
+	err = common.CheckDatabaseFile(options, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = checkDumpFolder(dumpLocation)
+	err = common.CheckDumpFolder(options.DumpLocation)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -126,7 +134,7 @@ func startCLI(options CLIOptions) {
 	fmt.Println("Pinecone v0.4.2b")
 	fmt.Println("Please share output of this program with the Pinecone team if you find anything interesting!")
 
-	err = checkParsingSettings()
+	err = common.CheckParsingSettings()
 	if err != nil {
 		log.Fatalln(err)
 	}

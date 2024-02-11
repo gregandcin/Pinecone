@@ -3,10 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"pinecone/cli"
+	"pinecone/common"
+	"pinecone/gui"
 )
 
 var (
-	titles        TitleList
+	titles        common.TitleList
 	updateFlag    = false
 	summarizeFlag = false
 	titleIDFlag   = ""
@@ -54,20 +57,21 @@ func main() {
 	
 	if guiEnabled {
 		// TODO: GUI Option
-		guiOpts := GUIOptions{
+		guiOpts := gui.GUIOptions{
 			DataFolder:   jsonDataFolder,
 			JSONFilePath: jsonFilePath,
 			JSONUrl:      jsonURL,
 		}
 		
-		startGUI(guiOpts)
+		guiOpts.StartGUI(guiOpts)
 	} else {
-		cliOpts := CLIOptions{
+		cliOpts := cli.CLIOptions{
 			DataFolder:   jsonDataFolder,
 			JSONFilePath: jsonFilePath,
 			JSONUrl:      jsonURL,
+			UpdateFlag: updateFlag,
 		}
 
-		startCLI(cliOpts)
+		cliOpts.StartCLI()
 	}
 }
