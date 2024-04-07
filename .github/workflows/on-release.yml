@@ -1,0 +1,82 @@
+name: On Release Published
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-binaries-linux:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^1.21.5"
+
+      - name: Build
+        run: go build .
+
+      - name: Rename archive
+        run: mkdir bin && mv Pinecone bin/Pinecone && mv data bin/data && zip -r bin/Pinecone_linux.zip bin
+
+      - name: Upload Linux Bin
+        uses: djn24/add-asset-to-release@v2
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          path: "bin/Pinecone_linux.zip"
+
+  publish-binaries-mac:
+    timeout-minutes: 20
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^1.21.5"
+
+      - name: Build
+        run: go build . -o Pinecone.app
+
+      - name: Zip App
+        run: mkdir bin && mv Pinecone.app bin/Pinecone.app && mv data bin/data && zip -vr Pinecone_macos.zip bin -x "*.DS_Store" && mv Pinecone_macos.zip bin/
+
+      - name: Upload MacOS Bin
+        uses: djn24/add-asset-to-release@v2
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          path: "bin/Pinecone_macos.zip"
+
+  publish-binaries-win:
+    timeout-minutes: 20
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "^1.21.5"
+
+      - name: Build
+        run: go build .
+
+      - name: Zip Binary
+        shell: pwsh
+        run: Compress-Archive -Path "Pinecone.exe", "data" -DestinationPath "Pinecone_win.zip" && mv Pinecone_win.zip bin/
+
+      - name: Upload Win Bin
+        uses: djn24/add-asset-to-release@v2
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          path: "bin/Pinecone_win.zip"
