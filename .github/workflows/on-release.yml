@@ -22,13 +22,13 @@ jobs:
         run: go build .
 
       - name: Rename archive
-        run: mkdir bin && mv Pinecone bin/Pinecone && mv data bin/data && zip -r bin/Pinecone_linux.zip bin
+        run: zip -r Pinecone_linux.zip data Pinecone
 
       - name: Upload Linux Bin
         uses: djn24/add-asset-to-release@v2
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          path: "bin/Pinecone_linux.zip"
+          path: "Pinecone_linux.zip"
 
   publish-binaries-mac-intel:
     timeout-minutes: 20
@@ -47,13 +47,13 @@ jobs:
         run: GOOS=darwin GOARCH=amd64 go build -o Pinecone.app
 
       - name: Zip App
-        run: mkdir bin && mv Pinecone.app bin/Pinecone.app && mv data bin/data && zip -vr Pinecone_macos_intel.zip bin -x "*.DS_Store" && mv Pinecone_macos_intel.zip bin/
+        run: zip -vr Pinecone_macos_intel.zip data Pinecone.app -x "*.DS_Store"
 
       - name: Upload MacOS Bin
         uses: djn24/add-asset-to-release@v2
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          path: "bin/Pinecone_macos_intel.zip"
+          path: "Pinecone_macos_intel.zip"
 
   publish-binaries-mac-arm:
     timeout-minutes: 20
@@ -72,13 +72,13 @@ jobs:
         run: GOOS=darwin GOARCH=arm64 go build -o Pinecone.app
 
       - name: Zip App
-        run: mkdir bin && mv Pinecone.app bin/Pinecone.app && mv data bin/data && zip -vr Pinecone_macos_arm.zip bin -x "*.DS_Store" && mv Pinecone_macos_arm.zip bin/
+        run: zip -vr Pinecone_macos_arm.zip data Pinecone.app -x "*.DS_Store"
 
       - name: Upload MacOS Bin
         uses: djn24/add-asset-to-release@v2
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          path: "bin/Pinecone_macos_arm.zip"
+          path: "Pinecone_macos_arm.zip"
 
   publish-binaries-win:
     timeout-minutes: 20
