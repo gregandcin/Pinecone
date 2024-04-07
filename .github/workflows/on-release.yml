@@ -73,10 +73,9 @@ jobs:
 
       - name: Zip Binary
         shell: pwsh
-        run: Compress-Archive -Path "Pinecone.exe", "data" -DestinationPath "Pinecone_win.zip" && mv Pinecone_win.zip bin/
-
+        run: Compress-Archive -Path "Pinecone.exe", "data" -DestinationPath "Pinecone_win.zip"
       - name: Upload Win Bin
         uses: djn24/add-asset-to-release@v2
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          path: "bin/Pinecone_win.zip"
+          path: "Pinecone_win.zip"
