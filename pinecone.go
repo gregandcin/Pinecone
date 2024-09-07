@@ -3,6 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"path"
+	"path/filepath"
+	"runtime"
+
+	"github.com/diamondburned/gotk4/pkg/gio/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v4"
 )
 
 var (
@@ -11,9 +19,11 @@ var (
 	summarizeFlag = false
 	titleIDFlag   = ""
 	fatxplorer    = false
-	dumpLocation  = "dump"
+	dumpLocation  = "./dump/"
 	helpFlag      = false
-	version       = "0.5.1"
+	guiEnabled    = true
+	version       = "0.6.0"
+	dataPath      = "data"
 )
 
 func main() {
@@ -25,10 +35,12 @@ func main() {
 	flag.StringVar(&titleIDFlag, "tID", "", "Filter statistics by Title ID")
 	flag.BoolVar(&fatxplorer, "fatxplorer", false, "Use FatXplorer's X: drive")
 	flag.BoolVar(&fatxplorer, "f", false, "Use FatXplorer's X: drive")
-	flag.StringVar(&dumpLocation, "location", "dump", "Directory to search for TDATA/UDATA directories")
-	flag.StringVar(&dumpLocation, "l", "dump", "Directory to search for TDATA/UDATA directories")
+	flag.StringVar(&dumpLocation, "location", "./dump/", "Directory to search for TDATA/UDATA directories")
+	flag.StringVar(&dumpLocation, "l", "./dump/", "Directory to search for TDATA/UDATA directories")
 	flag.BoolVar(&helpFlag, "help", false, "Display help information")
 	flag.BoolVar(&helpFlag, "h", false, "Display help information")
+	flag.BoolVar(&guiEnabled, "gui", true, "Enable GUI")
+	flag.BoolVar(&guiEnabled, "g", true, "Enable GUI")
 
 	flag.Parse() // Parse command line flags
 
@@ -41,18 +53,62 @@ func main() {
 		fmt.Println("  -f, --fatxplorer: Use FATXPlorer's X drive as the root directory. If not set, runs as normal. (Windows Only)")
 		fmt.Println("  -l --location:    Directory where TDATA/UDATA folders are stored. If not set, checks in \"dump\"")
 		fmt.Println("  -h, --help:       Display this help information.")
+		fmt.Println("  -g, --gui:        Enable the GUI interface (default = true)")
 		return
 	}
 
-	jsonFilePath := "data/id_database.json"
-	jsonDataFolder := "data"
-	jsonURL := "https://api.github.com/repos/Xbox-Preservation-Project/Pinecone/contents/data/id_database.json"
-
-	cliOpts := CLIOptions{
-		DataFolder:   jsonDataFolder,
-		JSONFilePath: jsonFilePath,
-		JSONUrl:      jsonURL,
+	switch runtime.GOOS {
+	case "linux":
+		homedir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		dataPath = path.Clean(homedir + "/.config/Pinecone/data/")
+	case "darwin":
+		if dumpLocation == "dump" {
+			dumpLocation = path.Clean("../dump")
+		}
+		homedir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatal(err)
+		}
+		dataPath = path.Clean(homedir + "/.config/Pinecone/data/")
+	default:
+		dataPath = path.Clean("data")
 	}
 
-	startCLI(cliOpts)
+	_, err := os.Stat(dataPath)
+	if os.IsNotExist(err) {
+		if err = os.MkdirAll(dataPath, os.ModePerm); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	jsonFilePath := filepath.Join(dataPath, "id_database.json")
+	jsonDataFolder := dataPath
+	jsonURL := "https://api.github.com/repos/Xbox-Preservation-Project/Pinecone/contents/data/id_database.json"
+
+	if guiEnabled {
+		guiOpts := GUIOptions{
+			DataFolder:   jsonDataFolder,
+			JSONFilePath: jsonFilePath,
+			JSONUrl:      jsonURL,
+		}
+
+		app := gtk.NewApplication("com.github.Xbox-Preservation.Pinecone", gio.ApplicationFlagsNone)
+		app.ConnectActivate(func() { startGUI(guiOpts, app) })
+
+		if code := app.Run(os.Args); code > 0 {
+			os.Exit(code)
+		}
+
+	} else {
+		cliOpts := CLIOptions{
+			DataFolder:   jsonDataFolder,
+			JSONFilePath: jsonFilePath,
+			JSONUrl:      jsonURL,
+		}
+
+		startCLI(cliOpts)
+	}
 }

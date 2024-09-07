@@ -2,14 +2,14 @@ package main
 
 import (
 	"crypto/sha1"
-	"encoding/json"
 	"fmt"
+	"image/color"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
+	fatihColor "github.com/fatih/color"
 )
 
 func getSHA1Hash(filePath string) (string, error) {
@@ -27,21 +27,6 @@ func getSHA1Hash(filePath string) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
-func loadIgnoreList(filepath string) ([]string, error) {
-	var ignoreList []string
-
-	data, err := os.ReadFile(filepath)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(data, &ignoreList); err != nil {
-		return nil, err
-	}
-
-	return ignoreList, nil
-}
-
 func contains(slice []string, val string) bool {
 	for _, item := range slice {
 		// fmt.Printf("Comparing %q to %q\n", item, val)
@@ -54,8 +39,16 @@ func contains(slice []string, val string) bool {
 
 func checkForContent(directory string) error {
 	if _, err := os.Stat(directory); os.IsNotExist(err) {
-		printInfo(color.FgYellow, "%s directory not found\n", directory)
+		printInfo(fatihColor.FgYellow, "%s directory not found\n", directory)
 		return fmt.Errorf("%s directory not found", directory)
+	}
+
+	logOutput := func(s string) {
+		if !guiEnabled {
+			printInfo(fatihColor.FgYellow, s+"\n")
+		} else {
+			addText(color.RGBA{0, 0, 255, 255}, s)
+		}
 	}
 
 	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
@@ -81,7 +74,7 @@ func checkForContent(directory string) error {
 						return err
 					}
 				} else {
-					printInfo(color.FgYellow, "DLC content found in unrecognized directory: %s\n", subDirDLC)
+					logOutput(fmt.Sprintf("DLC content found in unrecognized directory: %s", subDirDLC))
 				}
 			}
 
@@ -95,7 +88,7 @@ func checkForContent(directory string) error {
 						return err
 					}
 				} else {
-					printInfo(color.FgYellow, "Updates found in unrecognized directory: %s\n", subDirUpdates)
+					logOutput(fmt.Sprintf("Updates found in unrecognized directory: %s\n", subDirUpdates))
 				}
 			}
 
@@ -103,9 +96,9 @@ func checkForContent(directory string) error {
 				return filepath.SkipDir // Skip further processing in unrecognized directories
 			}
 		}
+
 		return nil
 	})
-
 	return err
 }
 
@@ -140,7 +133,11 @@ func processDLCContent(subDirDLC string, titleData TitleData, titleID string, di
 
 		contentID := strings.ToLower(subContent.Name())
 		if !contains(titleData.ContentIDs, contentID) {
-			printInfo(color.FgRed, "Unknown content found at: %s\n", subContentPath)
+			if guiEnabled {
+				addText(color.RGBA{255, 0, 0, 255}, "Unknown content found at: %s", subContentPath)
+			}
+			printInfo(fatihColor.FgRed, "Unknown content found at: %s\n", subContentPath)
+
 			continue
 		}
 
@@ -159,9 +156,17 @@ func processDLCContent(subDirDLC string, titleData TitleData, titleID string, di
 
 		subContentPath = strings.TrimPrefix(subContentPath, directory+"/")
 		if archivedName != "" {
-			printInfo(color.FgGreen, "Content is known and archived (%s)\n", archivedName)
+			if guiEnabled {
+				addText(color.RGBA{0, 255, 255, 255}, "Content is known and archived %s", archivedName)
+			}
+			printInfo(fatihColor.FgGreen, "Content is known and archived %s\n", archivedName)
+
 		} else {
-			printInfo(color.FgYellow, "%s has unarchived content found at: %s\n", titleData.TitleName, subContentPath)
+			if guiEnabled {
+				addText(color.RGBA{255, 0, 0, 255}, "%s has unarchived content found at: %s", titleData.TitleName, subContentPath)
+			}
+			printInfo(fatihColor.FgYellow, "%s has unarchived content found at: %s\n", titleData.TitleName, subContentPath)
+
 		}
 	}
 
@@ -183,19 +188,31 @@ func processUpdates(subDirUpdates string, titleData TitleData, titleID string, d
 		filePath := filepath.Join(subDirUpdates, f.Name())
 		fileHash, err := getSHA1Hash(filePath)
 		if err != nil {
-			printInfo(color.FgRed, "Error calculating hash for file: %s, error: %s\n", f.Name(), err.Error())
+			if guiEnabled {
+				addText(color.RGBA{255, 0, 0, 255}, "Error calculating hash for file: %s, error: %s", f.Name(), err.Error())
+			}
+			printInfo(fatihColor.FgRed, "Error calculating hash for file: %s, error: %s\n", f.Name(), err.Error())
+
 			continue
 		}
 
 		for _, knownUpdate := range titleData.TitleUpdatesKnown {
 			for knownHash, name := range knownUpdate {
 				if knownHash == fileHash {
+					if guiEnabled {
+						addHeader("File Info")
+						addText(color.RGBA{0, 255, 255, 255}, "Title update found for %s (%s) (%s)", titleData.TitleName, titleID, name[17:])
+						filePath = strings.TrimPrefix(filePath, directory+"/")
+						addText(color.RGBA{0, 255, 255, 255}, "Path: %s", filePath)
+						addText(color.RGBA{0, 255, 255, 255}, "SHA1: %s", fileHash)
+					}
 					printHeader("File Info")
-					printInfo(color.FgGreen, "Title update found for %s (%s) (%s)\n", titleData.TitleName, titleID, name[17:])
+					printInfo(fatihColor.FgGreen, "Title update found for %s (%s) (%s)\n", titleData.TitleName, titleID, name[17:])
 					filePath = strings.TrimPrefix(filePath, directory+"/")
-					printInfo(color.FgGreen, "Path: %s\n", filePath)
-					printInfo(color.FgGreen, "SHA1: %s\n", fileHash)
+					printInfo(fatihColor.FgGreen, "Path: %s\n", filePath)
+					printInfo(fatihColor.FgGreen, "SHA1: %s\n", fileHash)
 					fmt.Println(separator)
+
 					knownUpdateFound = true
 					break
 				}
@@ -210,11 +227,19 @@ func processUpdates(subDirUpdates string, titleData TitleData, titleID string, d
 		}
 
 		if !knownUpdateFound {
+			if guiEnabled {
+				addHeader("File Info")
+				addText(color.RGBA{255, 0, 0, 255}, "Unknown Title Update found for %s (%s)", titleData.TitleName, titleID)
+				filePath = strings.TrimPrefix(filePath, directory+"/")
+				addText(color.RGBA{255, 0, 0, 255}, "Path: %s", filePath)
+				addText(color.RGBA{255, 0, 0, 255}, "SHA1: %s", fileHash)
+			}
 			printHeader("File Info")
-			printInfo(color.FgRed, "Unknown Title Update found for %s (%s)\n", titleData.TitleName, titleID)
+			printInfo(fatihColor.FgRed, "Unknown Title Update found for %s (%s)\n", titleData.TitleName, titleID)
 			filePath = strings.TrimPrefix(filePath, directory+"/")
-			printInfo(color.FgRed, "Path: %s\n", filePath)
-			printInfo(color.FgRed, "SHA1: %s\n", fileHash)
+			printInfo(fatihColor.FgRed, "Path: %s\n", filePath)
+			printInfo(fatihColor.FgRed, "SHA1: %s\n", fileHash)
+
 		}
 	}
 

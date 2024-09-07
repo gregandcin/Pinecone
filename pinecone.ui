@@ -1,0 +1,178 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- Main Window -->
+  <object class="GtkWindow" id="main_window">
+    <property name="title">Application</property>
+    <property name="default-width">500</property>
+    <property name="default-height">400</property>
+    <child>
+      <!-- Notebook with Tabs -->
+      <object class="GtkNotebook" id="main_notebook">
+        <property name="tab-pos">top</property>
+        <child type="tab">
+          <object class="GtkLabel" id="main-tab">
+            <property name="label">Tab</property>
+          </object>
+        </child>
+        
+        <!-- Tab 1: Directory Scanner -->
+        <child>
+          <object class="GtkBox" id="main_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">10</property>
+            <!-- <property name="margin">10</property> -->
+
+            <!-- File Picker Field and Button -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">10</property>
+                
+                <child>
+                  <object class="GtkEntry" id="directory_entry">
+                    <property name="hexpand">true</property>
+                    <property name="placeholder-text">Choose a directory...</property>
+                  </object>
+                </child>
+                
+                <child>
+                  <object class="GtkButton" id="file_picker_button">
+                    <property name="label">Browse...</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Start Scan Button -->
+            <child>
+              <object class="GtkButton" id="start_scan_button">
+                <property name="label">Start Scan</property>
+              </object>
+            </child>
+            
+            <!-- Empty Center Box -->
+            <child>
+              <object class="GtkBox" id="output_box">
+                <property name="orientation">vertical</property>
+                <property name="spacing">10</property>
+                <property name="vexpand">true</property>
+              </object>
+            </child>
+            
+            <!-- Save Output Button -->
+            <child>
+              <object class="GtkButton" id="save_output_button">
+                <property name="label">Save Output</property>
+              </object>
+            </child>
+          </object>
+          <!-- <packing> -->
+          <!--   <property name="tab-label">Directory Scanner</property> -->
+          <!-- </packing> -->
+          </child>
+
+        <child type="tab">
+          <object class="GtkLabel" id="settings-tab">
+            <property name="label">Tab</property>
+          </object>
+        </child>
+        
+        <!-- Tab 2: Update Database -->
+        <child>
+          <object class="GtkBox" id="update_database_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">10</property>
+            <!-- <property name="margin">10</property> -->
+            
+            <!-- Update Database Button -->
+            <child>
+              <object class="GtkButton" id="update_database_button">
+                <property name="label">Update Database</property>
+              </object>
+            </child>
+            
+            <!-- Username Field -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">Username</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="username_entry">
+                    <property name="placeholder-text">username</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Discord Username Field -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">Discord Username</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="discord_username_entry">
+                    <property name="placeholder-text">@username</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Reddit Username Field -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">Reddit Username</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="reddit_username_entry">
+                    <property name="placeholder-text">u/username</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Twitter Username Field -->
+            <child>
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="label">Twitter Username</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="twitter_username_entry">
+                    <property name="placeholder-text">@username</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            
+            <!-- Save Settings Button -->
+            <child>
+              <object class="GtkButton" id="save_settings_button">
+                <property name="label">Save Settings</property>
+              </object>
+            </child>
+            
+          </object>
+        </child>
+        
+      </object>
+    </child>
+  </object>
+</interface>
+
+
