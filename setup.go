@@ -19,7 +19,7 @@ func checkDataFolder(dataFolder string) error {
 	return nil
 }
 
-func checkDatabaseFile(jsonFilePath string, jsonURL string, updateFlag bool, window *gtk.Window) error {
+func checkDatabaseFile(jsonFilePath string, jsonURL string, updateFlag bool, window *gtk.ApplicationWindow) error {
 	// Check if JSON file exists
 	if _, err := os.Stat(jsonFilePath); os.IsNotExist(err) {
 		// Prompt for download if JSON file doesn't exist

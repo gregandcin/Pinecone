@@ -158,7 +158,7 @@ func saveOutput(settings *Settings) {
 	// outputContainer.Add(output)
 }
 
-func guiShowDownloadConfirmation(window *gtk.Window, filePath string, url string) {
+func guiShowDownloadConfirmation(window *gtk.ApplicationWindow, filePath string, url string) {
 	// message := fmt.Sprintf("The required JSON data is not found.\nIt can be downloaded from:\n%s\nDo you want to download it now?", url)
 	//
 	// dialog := &gtk.AlertDialog{}
@@ -201,7 +201,7 @@ func guiScanDump() {
 	}
 }
 
-func guiStartScan(options GUIOptions, win *gtk.Window) {
+func guiStartScan(options GUIOptions, win *gtk.ApplicationWindow) {
 	// outputContainer.
 	if dumpLocation == "" {
 		addText(color.RGBA{255, 255, 255, 255}, "Please set a path first.")
@@ -216,52 +216,52 @@ func guiStartScan(options GUIOptions, win *gtk.Window) {
 }
 
 func startGUI(options GUIOptions, app *gtk.Application) {
-	builder := gtk.NewBuilderFromString(uiXML)
+	window := gtk.NewApplicationWindow(app)
+	window.SetTitle("Pinecone")
 
-	window := builder.GetObject("main_window").Cast().(*gtk.Window)
+	mainBox := gtk.NewBox(gtk.OrientationVertical, 10)
+	topBox := gtk.NewBox(gtk.OrientationHorizontal, 10)
+	middleBox := gtk.NewCenterBox()
+	bottomBox := gtk.NewBox(gtk.OrientationHorizontal, 10)
 
-	notebook := builder.GetObject("main_notebook").Cast().(*gtk.Notebook)
-	mainPage := builder.GetObject("main_box").Cast().(*gtk.Box)
-	mainLable := builder.GetObject("main_tab").Cast().(*gtk.Label)
+	scanner := gtk.NewButtonWithLabel("Start Scan")
+	scanner.SetHExpand(false)
+	scanner.SetVExpand(false)
+	scanner.ConnectClicked(func() {
+		guiStartScan(options, window)
+	})
 
-	settingsPage := builder.GetObject("update_database_box").Cast().(*gtk.Box)
-	settingsLable := builder.GetObject("settings_tab").Cast().(*gtk.Label)
+	outputLabel := gtk.NewLabel("Output:")
+	middleBox.SetCenterWidget(outputLabel)
 
-	notebook.AppendPage(mainPage, mainLable)
-	notebook.AppendPage(settingsPage, settingsLable)
+	saveOutputButton := gtk.NewButtonWithLabel("Save Output")
+	saveOutputButton.SetHExpand(false)
+	saveOutputButton.SetVExpand(false)
+	saveOutputButton.ConnectClicked(func() {
+		settings, err := loadSettings()
+		if err != nil {
+			fmt.Println(err)
+			settings = &Settings{}
+		}
+		saveOutput(settings)
+	})
 
-	// outputContainer = builder.GetObject("output_box").Cast().(*gtk.Box)
-	// scroll := gtk.NewScrolledWindow()
-	// scroll.SetChild(outputContainer)
-	//
-	// startScanButton := builder.GetObject("start_scan_button").Cast().(*gtk.Button)
-	// startScanButton.Connect("clicked", func() {
-	// 	guiStartScan(options, window)
-	// })
-	//
-	// saveOutputButton := builder.GetObject("save_output_button").Cast().(*gtk.Button)
-	// saveOutputButton.Connect("clicked", func() {
-	// 	settings, err := loadSettings()
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		settings = &Settings{}
-	// 	}
-	//
-	// 	saveOutput(settings)
-	// })
-	//
-	// updateDatabaseButton := builder.GetObject("update_database_button").Cast().(*gtk.Button)
-	// updateDatabaseButton.Connect("clicked", func() {
-	// 	updateJSON := true
-	// 	err := checkDatabaseFile(options.JSONFilePath, options.JSONUrl, updateJSON, nil)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-	// })
-	//
-	// saveSettingsButton := builder.GetObject("save_settings_button").Cast().(*gtk.Button)
-	// saveSettingsButton.Connect("clicked", func() {
-	// })
+	exitButton := gtk.NewButtonWithLabel("Exit")
+	exitButton.SetHExpand(false)
+	exitButton.SetVExpand(false)
+	exitButton.ConnectClicked(func() {
+		os.Exit(0)
+	})
+
+	topBox.Append(scanner)
+	bottomBox.Append(saveOutputButton)
+	bottomBox.Append(exitButton)
+	mainBox.Append(topBox)
+	mainBox.Append(middleBox)
+	mainBox.Append(bottomBox)
+
+	window.SetChild(mainBox)
+	window.SetDefaultSize(400, 300)
 
 	window.SetVisible(true)
 }
